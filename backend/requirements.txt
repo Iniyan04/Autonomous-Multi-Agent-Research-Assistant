@@ -1,0 +1,36 @@
+# ─────────────────────────────────────────────
+# Autonomous Multi-Agent Research Assistant
+# Backend Requirements — Groq (Free LLM)
+# ─────────────────────────────────────────────
+
+# ── LLM Provider (FREE) ───────────────────────
+groq>=0.8.0                        # Groq API — free tier (llama-3.3-70b)
+langchain-groq>=0.1.0              # LangChain x Groq integration
+
+# ── Agent Frameworks ──────────────────────────
+langgraph>=0.1.0                   # Agent orchestration & state graph
+crewai>=0.30.0                     # Multi-agent role-based collaboration
+langchain>=0.2.0                   # Core LangChain abstractions
+langchain-community>=0.2.0         # Community tools & integrations
+
+# ── Research / Search Tools ───────────────────
+tavily-python>=0.3.0               # Tavily Search API (free tier)
+
+# ── Backend API ───────────────────────────────
+fastapi>=0.111.0                   # REST API framework
+uvicorn[standard]>=0.29.0          # ASGI server
+python-multipart>=0.0.9            # File upload support
+
+# ── Utilities ─────────────────────────────────
+python-dotenv>=1.0.0               # Load .env API keys
+pydantic>=2.0.0                    # Data validation & settings
+tiktoken>=0.7.0                    # Token counting
+
+# ── Output & Formatting ───────────────────────
+rich>=13.0.0                       # Pretty terminal output
+markdown>=3.6                      # Markdown report rendering
+
+# ── Testing ───────────────────────────────────
+pytest>=8.0.0                      # Unit testing
+pytest-asyncio>=0.23.0             # Async test support
+httpx>=0.27.0                      # Test HTTP client for FastAPI
