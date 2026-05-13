@@ -3,10 +3,12 @@
 # US-03: Used by Research Agent
 # ─────────────────────────────────────────────
 
+from langchain_core.tools import tool
 from tavily import TavilyClient
 from config.settings import TAVILY_API_KEY, TAVILY_MAX_RESULTS
 
 
+@tool("search_web")
 def search_web(query: str) -> list[dict]:
     """
     Search the web using Tavily API (free tier).

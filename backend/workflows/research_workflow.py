@@ -9,19 +9,10 @@ from schemas.state import ResearchState
 from agents.research_agent import research_node
 from agents.summarization_agent import summarization_node
 from agents.fact_check_agent import fact_check_node
+from agents.report_agent import report_node
 
 
-# ── Report Node Placeholder ───────────────────
-# Full implementation by Vaishnavi in US-06
-def report_node(state: ResearchState) -> ResearchState:
-    """
-    Report Generator Agent — formats the final research report.
-    Populates: state['final_report']
 
-    Full implementation in US-06 (Vaishnavi).
-    """
-    print("[Report Agent] Running... (placeholder)")
-    return {**state, "final_report": "Report generation coming in US-06."}
 
 
 # ── Build LangGraph Workflow ──────────────────
