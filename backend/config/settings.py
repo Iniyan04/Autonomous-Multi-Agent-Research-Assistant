@@ -10,7 +10,9 @@ load_dotenv()
 # ── Groq LLM (FREE) ───────────────────────────
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GROQ_MODEL   = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
-MAX_TOKENS   = int(os.getenv("MAX_TOKENS", 2048))
+MAX_TOKENS   = min(int(os.getenv("MAX_TOKENS", 2048)), 4096)
+CREWAI_VERBOSE = os.getenv("CREWAI_VERBOSE", "False") == "True"
+MAX_CONTEXT_CHARS = int(os.getenv("MAX_CONTEXT_CHARS", 12000))
 
 # ── Tavily Search (FREE) ──────────────────────
 TAVILY_API_KEY     = os.getenv("TAVILY_API_KEY")
@@ -18,7 +20,7 @@ TAVILY_MAX_RESULTS = int(os.getenv("TAVILY_MAX_RESULTS", 5))
 
 # ── FastAPI ───────────────────────────────────
 API_HOST = os.getenv("API_HOST", "0.0.0.0")
-API_PORT = int(os.getenv("API_PORT", 8000))
+API_PORT = int(os.getenv("API_PORT", os.getenv("PORT", 8000)))
 DEBUG    = os.getenv("DEBUG", "True") == "True"
 
 # ── Paths ─────────────────────────────────────

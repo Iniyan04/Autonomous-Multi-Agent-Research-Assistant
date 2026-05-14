@@ -29,6 +29,7 @@ tiktoken>=0.7.0                    # Token counting
 # ── Output & Formatting ───────────────────────
 rich>=13.0.0                       # Pretty terminal output
 markdown>=3.6                      # Markdown report rendering
+beautifulsoup4>=4.12.0             # HTML parsing for webpage scraping
 
 # ── Testing ───────────────────────────────────
 pytest>=8.0.0                      # Unit testing

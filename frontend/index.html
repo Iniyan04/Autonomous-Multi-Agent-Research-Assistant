@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Research Assistant</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="background-grid" aria-hidden="true"></div>
+    <main class="shell">
+      <section class="hero" aria-label="Research assistant overview">
+        <div>
+          <p class="eyebrow">Autonomous Multi-Agent Research Assistant</p>
+          <h1>Research Console</h1>
+          <p class="hero-copy">
+            Route a question through specialist agents, collect sources, validate claims, and turn the result into a clean research report.
+          </p>
+        </div>
+        <div class="agent-orbit" aria-hidden="true">
+          <span class="agent-node node-research">Research</span>
+          <span class="agent-node node-summary">Summary</span>
+          <span class="agent-node node-fact">Fact</span>
+          <span class="agent-node node-report">Report</span>
+        </div>
+      </section>
+
+      <section class="workspace" aria-label="Research assistant workspace">
+        <header class="topbar">
+          <div>
+            <h2>Mission Control</h2>
+            <p class="subtle">Choose a workflow, enter a query, and watch the report assemble.</p>
+          </div>
+          <div class="status" id="apiStatus">
+            <span class="status-dot"></span>
+            <span>Checking API</span>
+          </div>
+        </header>
+
+        <form class="query-panel" id="researchForm">
+          <label for="queryInput">Research query</label>
+          <textarea
+            id="queryInput"
+            name="query"
+            rows="4"
+            placeholder="Ask a focused question or request a deeper research report..."
+            required
+          ></textarea>
+
+          <div class="quick-prompts" aria-label="Example queries">
+            <button type="button" data-query="Compare LangGraph and CrewAI for building multi-agent research systems.">LangGraph vs CrewAI</button>
+            <button type="button" data-query="What are the latest practical uses of agentic AI in education?">Agentic AI in education</button>
+            <button type="button" data-query="Explain how tool calling improves autonomous research assistants.">Tool calling impact</button>
+          </div>
+
+          <div class="controls">
+            <label class="select-label" for="workflowSelect">
+              Workflow
+              <select id="workflowSelect" name="workflow">
+                <option value="auto">Auto Router</option>
+                <option value="langgraph">Fast Research</option>
+                <option value="crewai">Deep Dive</option>
+              </select>
+            </label>
+            <button class="primary-button" type="submit" id="submitButton">
+              <span>Run Research</span>
+            </button>
+          </div>
+
+          <div class="agent-progress" id="agentProgress" aria-label="Agent progress">
+            <span data-step="Research">Research</span>
+            <span data-step="Summarize">Summarize</span>
+            <span data-step="Fact-check">Fact-check</span>
+            <span data-step="Report">Report</span>
+          </div>
+        </form>
+
+        <section class="result-layout" aria-live="polite">
+          <aside class="side-panel">
+            <div class="metric">
+              <span class="metric-label">Workflow</span>
+              <strong id="workflowUsed">Waiting</strong>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Fact Check</span>
+              <strong id="factVerdict">Waiting</strong>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Sources</span>
+              <strong id="sourceCount">0</strong>
+            </div>
+
+            <div class="sources">
+              <h2>Sources</h2>
+              <ul id="sourceList">
+                <li class="muted">Sources will appear after a report is generated.</li>
+              </ul>
+            </div>
+          </aside>
+
+          <article class="report-panel">
+            <div class="report-toolbar hidden" id="reportToolbar">
+              <h2>Final Report</h2>
+              <button class="secondary-button" type="button" id="copyButton" disabled>
+                Copy
+              </button>
+            </div>
+            <div class="empty-state" id="emptyState">
+              <div class="empty-icon" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              <h2>Ready when you are</h2>
+              <p>Enter a query and start the agent workflow. The report area will open once the final answer is ready.</p>
+            </div>
+            <div class="loading-screen hidden" id="loadingScreen">
+              <div class="loading-core" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              <p class="loading-label" id="loadingLabel">Research agents are warming up</p>
+              <div class="loading-track">
+                <span></span>
+              </div>
+              <div class="loading-events">
+                <span>Searching sources</span>
+                <span>Summarizing findings</span>
+                <span>Checking claims</span>
+                <span>Drafting report</span>
+              </div>
+            </div>
+            <div class="message hidden" id="messageBox"></div>
+            <div class="report-content hidden" id="reportContent"></div>
+          </article>
+        </section>
+      </section>
+    </main>
+    <script src="/static/app.js"></script>
+  </body>
+</html>

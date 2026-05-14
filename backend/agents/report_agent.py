@@ -16,15 +16,28 @@ REPORT_PROMPT = ChatPromptTemplate.from_messages([
     research data, summaries, and fact-checking results into a final, 
     professional, and well-formatted Markdown report.
 
-    The report MUST include:
-    - A clear, engaging Title based on the query
-    - An Executive Summary
-    - Detailed sections based on the summarized findings
-    - A Fact-Check Verdict section (highlighting reliability, confidence score, and any flagged claims)
-    - A References list at the end
+    The report MUST use this exact structure:
+    # Report Title
+
+    ## Executive Summary
+    2-3 concise sentences.
+
+    ## Key Findings
+    4-6 bullet points. Each bullet must start on its own line.
+
+    ## Timeline / Background
+    Short paragraphs or bullets when useful.
+
+    ## Fact-Check Verdict
+    Highlight reliability, confidence score, and flagged claims.
+
+    ## References
+    Bullet list of source titles and URLs.
 
     Ensure the Markdown formatting is clean, using headings (##, ###), 
-    bullet points, and bold text where appropriate to make it highly readable."""),
+    bullet points, and bold text where appropriate to make it highly readable.
+    Put blank lines between every heading, paragraph, and list. Do not put
+    multiple headings or bullets on the same line."""),
     ("human", """Query: {query}
 
 Summary:

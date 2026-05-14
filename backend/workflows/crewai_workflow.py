@@ -1,116 +1,220 @@
-# ─────────────────────────────────────────────
-# workflows/crewai_workflow.py
-# Agent Collaboration Workflow using CrewAI
-# ─────────────────────────────────────────────
-
-from crewai import Agent, Task, Crew, Process
-from langchain.tools import tool
 from textwrap import dedent
 
-from tools.search_tool import search_web
-from tools.scrape_tool import fetch_webpage_content
-from llm.groq_client import get_llm
+from crewai import Agent, Crew, LLM, Process, Task
+from crewai.tools import tool
 
-# ── 2. Define CrewAI Workflow ─────────────────
+from config.settings import (
+    CREWAI_VERBOSE,
+    GROQ_API_KEY,
+    GROQ_MODEL,
+    MAX_CONTEXT_CHARS,
+    MAX_TOKENS,
+)
+from tools.scrape_tool import fetch_webpage_content
+from tools.search_tool import search_web
+
+
+MAX_CREWAI_SEARCH_RESULTS = 5
+MAX_SEARCH_RESULT_WORDS = 120
+MAX_FETCHED_PAGE_WORDS = 450
+
+
+def _normalize_text(text: str) -> str:
+    return " ".join((text or "").split())
+
+
+def _trim_words(text: str, max_words: int) -> str:
+    """
+    Keep snippets readable and compact before CrewAI stores them in context.
+    """
+    words = _normalize_text(text).split()
+    if len(words) <= max_words:
+        return " ".join(words)
+    return f"{' '.join(words[:max_words])}..."
+
+
+def _cap_context(text: str) -> str:
+    """
+    Final safety cap for data passed between CrewAI stages.
+    """
+    normalized = (text or "").replace("\r\n", "\n").replace("\r", "\n").strip()
+    if len(normalized) <= MAX_CONTEXT_CHARS:
+        return normalized
+    return f"{normalized[:MAX_CONTEXT_CHARS].rstrip()}..."
+
+
+def _run_single_task(agent: Agent, task: Task) -> str:
+    """
+    Run one agent step and cap its output before it feeds the next stage.
+    """
+    task.description = _cap_context(task.description)
+    crew = Crew(
+        agents=[agent],
+        tasks=[task],
+        process=Process.sequential,
+        verbose=CREWAI_VERBOSE,
+    )
+    return _cap_context(str(crew.kickoff()))
+
+
+@tool("search_web")
+def crewai_search_web(query: str) -> str:
+    """
+    Search the web for relevant research sources.
+    """
+    results = search_web.invoke({"query": query})
+    if not results:
+        return "No search results found."
+
+    trimmed_results = results[:MAX_CREWAI_SEARCH_RESULTS]
+
+    return "\n\n".join(
+        f"Title: {result.get('title', 'Untitled')}\n"
+        f"URL: {result.get('url', '')}\n"
+        f"Summary: {_trim_words(result.get('content', ''), MAX_SEARCH_RESULT_WORDS)}"
+        for result in trimmed_results
+    )
+
+
+@tool("fetch_webpage_content")
+def crewai_fetch_webpage_content(url: str) -> str:
+    """
+    Fetch readable text content from a webpage URL.
+    """
+    content = fetch_webpage_content.invoke({"url": url})
+    return _trim_words(content, MAX_FETCHED_PAGE_WORDS)
+
+
 def run_crewai_pipeline(query: str) -> str:
     """
-    Main entry point — runs the multi-agent collaboration pipeline via CrewAI.
+    Runs the multi-agent collaboration pipeline via CrewAI.
     """
     print(f"\n[CrewAI] Starting autonomous collaboration for: '{query}'\n")
 
-    # Initialize the LLM
-    llm = get_llm()
+    llm = LLM(
+        model=GROQ_MODEL,
+        provider="openai",
+        api_key=GROQ_API_KEY,
+        base_url="https://api.groq.com/openai/v1",
+        temperature=0.3,
+        max_tokens=MAX_TOKENS,
+    )
 
-    # ── Agents ──
     researcher = Agent(
-        role='Senior Research Analyst',
-        goal='Uncover deep insights, raw data, and factual information about the query',
-        backstory=dedent("""
-            You are an expert researcher. Your expertise lies in finding the most 
-            accurate, up-to-date, and relevant information across the internet. 
-            You leave no stone unturned and always provide sources.
-        """),
-        verbose=True,
+        role="Senior Research Analyst",
+        goal="Find concise, reliable evidence from at most 5 sources for the query",
+        backstory=dedent(
+            """
+            You are an expert researcher who extracts only the most relevant
+            findings and source URLs. Keep notes compact and avoid copying long
+            passages from webpages.
+            """
+        ),
+        verbose=CREWAI_VERBOSE,
         allow_delegation=False,
-        tools=[search_web],
-        llm=llm
+        tools=[crewai_search_web],
+        llm=llm,
     )
 
     fact_checker = Agent(
-        role='Chief Fact-Checker',
-        goal='Scrutinize research findings for accuracy and reliability',
-        backstory=dedent("""
-            You are a meticulous fact-checker. You review data provided by the researcher 
-            and ensure that all claims are backed by solid evidence. You flag anything 
-            that seems speculative, biased, or unverified. You can ask the researcher 
-            to find more data if needed.
-        """),
-        verbose=True,
-        allow_delegation=True, # Allows delegating back to researcher if needed
-        tools=[fetch_webpage_content],
-        llm=llm
+        role="Chief Fact-Checker",
+        goal="Verify key claims using concise evidence from the provided sources",
+        backstory=dedent(
+            """
+            You are a meticulous fact-checker. Review only the most important
+            claims, use short excerpts or summaries, and flag anything speculative,
+            biased, or unverified.
+            """
+        ),
+        verbose=CREWAI_VERBOSE,
+        allow_delegation=False,
+        tools=[crewai_fetch_webpage_content],
+        llm=llm,
     )
 
     report_writer = Agent(
-        role='Senior Technical Writer',
-        goal='Compile research and fact-check data into a polished, professional Markdown report',
-        backstory=dedent("""
-            You are a master at synthesizing complex information into clear, 
-            engaging, and highly structured reports. Your formatting is impeccable.
-        """),
-        verbose=True,
+        role="Senior Technical Writer",
+        goal="Create a concise Markdown report from verified findings",
+        backstory=dedent(
+            """
+            You synthesize research into clear, structured reports with concise
+            sections and source links.
+            """
+        ),
+        verbose=CREWAI_VERBOSE,
         allow_delegation=False,
-        llm=llm
+        llm=llm,
     )
 
-    # ── Tasks ──
     research_task = Task(
-        description=dedent(f"""
-            Conduct a comprehensive web search to answer the following query: "{query}"
-            Gather all key facts, statistics, and context.
-            You MUST compile these findings into a detailed summary. Include your source URLs.
-        """),
-        expected_output="A detailed summary of research findings with source URLs.",
-        agent=researcher
+        description=dedent(
+            f"""
+            Conduct a comprehensive web search to answer this query: "{query}".
+            Use at most 5 sources. Extract concise key findings, relevant facts,
+            and source URLs only. Do not copy full webpage content.
+            """
+        ),
+        expected_output="A concise research summary with no more than 5 source URLs.",
+        agent=researcher,
     )
+
+    research_summary = _run_single_task(researcher, research_task)
 
     verify_task = Task(
-        description=dedent("""
-            Review the research summary provided by the researcher.
-            Cross-reference the claims. Provide a clear verdict on the reliability of the data.
-            If information is missing, delegate to the researcher to find it.
-            Produce a verified summary that includes a 'Fact-Check Verdict'.
-        """),
-        expected_output="A verified research summary including a specific Fact-Check Verdict and list of flagged/verified claims.",
-        agent=fact_checker
+        description=dedent(
+            f"""
+            Review this capped research summary:
+            {research_summary}
+
+            Cross-reference only the most important claims and provide a clear
+            reliability verdict. Avoid fetching or copying full webpage content.
+            Include verified claims, flagged claims, and any corrections.
+            """
+        ),
+        expected_output="A concise verified summary with a fact-check verdict.",
+        agent=fact_checker,
     )
+    fact_check_summary = _run_single_task(fact_checker, verify_task)
 
     report_task = Task(
-        description=dedent(f"""
-            Take the verified summary from the Fact-Checker and create a final, 
-            professional Markdown report for the query: "{query}".
-            
-            The report MUST include:
-            - A clear, engaging Title
-            - An Executive Summary
-            - Detailed Sections based on findings
-            - A Fact-Check Verdict section
-            - A References list
-        """),
+        description=dedent(
+            f"""
+            Create a final professional Markdown report for this query: "{query}".
+
+            Capped research summary:
+            {research_summary}
+
+            Capped fact-check summary:
+            {fact_check_summary}
+
+            Include:
+            # Report Title
+
+            ## Executive Summary
+            Write 2-3 concise sentences.
+
+            ## Key Findings
+            Use 4-6 bullet points. Start each bullet on its own line.
+
+            ## Timeline / Background
+            Use short paragraphs or bullets when useful.
+
+            ## Fact-Check Verdict
+            Explain what is verified, uncertain, or disputed.
+
+            ## References
+            List source titles and URLs as bullets.
+
+            Keep the report focused. Use only the sources provided by the
+            researcher and fact-checker. Return valid Markdown with blank lines
+            between every heading, paragraph, and list. Do not put multiple
+            headings or bullets on the same line.
+            """
+        ),
         expected_output="A fully formatted Markdown report.",
-        agent=report_writer
+        agent=report_writer,
     )
+    result = _run_single_task(report_writer, report_task)
 
-    # ── Crew Orchestration ──
-    research_crew = Crew(
-        agents=[researcher, fact_checker, report_writer],
-        tasks=[research_task, verify_task, report_task],
-        process=Process.sequential, # Tasks execute sequentially, but fact-checker can delegate to researcher
-        verbose=True
-    )
-
-    # Execute the crew
-    result = research_crew.kickoff()
-    
     print("\n[CrewAI] Collaboration complete.\n")
-    return str(result)
+    return _cap_context(result)

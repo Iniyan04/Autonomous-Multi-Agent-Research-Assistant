@@ -1,0 +1,17 @@
+.git
+.gitignore
+.venv
+__pycache__
+*.pyc
+.pytest_cache
+**/.env
+**/.env.*
+!backend/.env.example
+*.log
+backend/logs
+backend/reports
+backend/__pycache__
+backend/**/__pycache__
+backend/.pytest_cache
+backend/tests
+frontend/node_modules

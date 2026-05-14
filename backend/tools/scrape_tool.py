@@ -33,6 +33,6 @@ def fetch_webpage_content(url: str) -> str:
             text = re.sub(r'\s+', ' ', text).strip()
             
         # Truncate to avoid blowing up the LLM context window
-        return text[:8000]
+        return text[:3000]
     except Exception as e:
         return f"Error fetching webpage: {str(e)}"
