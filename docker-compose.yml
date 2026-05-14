@@ -1,0 +1,17 @@
+services:
+  research-assistant:
+    build:
+      context: .
+    image: research-assistant:local
+    env_file:
+      - backend/.env
+    environment:
+      DEBUG: "False"
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/reports:/app/backend/reports
+      - ./backend/logs:/app/backend/logs
+    restart: unless-stopped
